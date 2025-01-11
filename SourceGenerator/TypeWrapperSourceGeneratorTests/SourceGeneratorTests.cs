@@ -3,22 +3,22 @@
 namespace TypeWrapperSourceGeneratorTests
 {
     [TypeWrapper(typeof(int))]
-    partial struct WrappedInt
+    readonly partial struct WrappedInt
     {
     }
     
     [TypeWrapper(typeof(int))]
-    partial struct OtherWrappedInt
+    readonly partial struct OtherWrappedInt
     {
     }
     
     [TypeWrapper(typeof(string))]
-    partial struct WrappedString
+    readonly partial struct WrappedString
     {
     }
     
     [TypeWrapper(typeof(RefType))]
-    partial struct WrappedRefType
+    readonly partial struct WrappedRefType
     {
     }
 

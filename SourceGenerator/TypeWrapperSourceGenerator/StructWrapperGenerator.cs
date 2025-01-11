@@ -2,6 +2,7 @@
 using System.Linq;
 using System.Text;
 using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Text;
 
@@ -15,9 +16,12 @@ namespace TypeWrapperSourceGenerator
             public readonly StructDeclarationSyntax StructToAugment;
             public readonly string WrappedType;
             public readonly string Namespace;
+            public readonly bool IsReadOnly;
 
-            public WrappedStructDescription(StructDeclarationSyntax structToAugment, string wrappedType, string ns)
+            public WrappedStructDescription(StructDeclarationSyntax structToAugment, string wrappedType, string ns,
+                bool isReadOnly)
             {
+                IsReadOnly = isReadOnly;
                 StructToAugment = structToAugment;
                 WrappedType = wrappedType;
                 Namespace = ns;
@@ -29,8 +33,8 @@ namespace TypeWrapperSourceGenerator
             context.RegisterForSyntaxNotifications(() => new TypeWrapAttributeSyntaxReceiver());
         }
 
-        private readonly DiagnosticDescriptor _descriptor =
-            new DiagnosticDescriptor("TypeWrapperGenMessage", "Test", "{0}", "TypeWrapper", DiagnosticSeverity.Warning,
+        private readonly DiagnosticDescriptor _missingReadOnlyDescriptor =
+            new DiagnosticDescriptor("SWGen001", "Missing readonly", "Struct should be readonly", "StructWrapper", DiagnosticSeverity.Warning,
                 true);
 
         public void Execute(GeneratorExecutionContext context)
@@ -47,17 +51,26 @@ namespace TypeWrapperSourceGenerator
         private void GenerateStructWrapper(WrappedStructDescription structDescription,
             GeneratorExecutionContext context)
         {
-            string namespaceClause =
-                structDescription.Namespace == "" ? "" : $"namespace {structDescription.Namespace};";
+            bool isReadOnly = structDescription.IsReadOnly;
             StructDeclarationSyntax structToAugment = structDescription.StructToAugment;
             string wrappedType = structDescription.WrappedType;
             string typeName = structToAugment.Identifier.Text;
+            
+            if (!isReadOnly)
+            {
+                context.ReportDiagnostic(Diagnostic.Create(_missingReadOnlyDescriptor,
+                    structDescription.StructToAugment.GetLocation()));
+            }
+            
+            string readonlyClause = isReadOnly ? "readonly" : "";
+            string namespaceClause =
+                structDescription.Namespace == "" ? "" : $"namespace {structDescription.Namespace};";
 
             SourceText sourceText = SourceText.From($@"
             using System;
             {namespaceClause}
 
-            partial struct {typeName} : IEquatable<{typeName}>
+            {readonlyClause} partial struct {typeName} : IEquatable<{typeName}>
             {{
                 public readonly {wrappedType} Value;
                 public {typeName}({wrappedType} rawValue)
@@ -131,8 +144,10 @@ namespace TypeWrapperSourceGenerator
 
                 if (wrappedType == null)
                     return;
+                
+                bool isReadOnly = s.Modifiers.Any(m => m.IsKind(SyntaxKind.ReadOnlyKeyword));
 
-                WrappedStructDescriptions.Add(new WrappedStructDescription(s, wrappedType, namespaces));
+                WrappedStructDescriptions.Add(new WrappedStructDescription(s, wrappedType, namespaces, isReadOnly));
             }
         }
     }
