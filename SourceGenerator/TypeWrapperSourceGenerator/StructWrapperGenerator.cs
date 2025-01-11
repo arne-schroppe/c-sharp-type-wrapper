@@ -87,7 +87,7 @@ namespace TypeWrapperSourceGenerator
 
                 public static bool operator !=({typeName} left, {typeName} right)
                 {{
-                    return !left.Equals(right);
+                    return left.Equals(right);
                 }}
 
             }}", Encoding.UTF8);
