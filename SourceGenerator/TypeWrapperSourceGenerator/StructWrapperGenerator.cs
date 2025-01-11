@@ -1,4 +1,6 @@
-﻿using System.Text;
+﻿using System.Collections.Generic;
+using System.Linq;
+using System.Text;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Text;
@@ -13,53 +15,96 @@ namespace TypeWrapperSourceGenerator
             context.RegisterForSyntaxNotifications(() => new TypeWrapAttributeSyntaxReceiver());
         }
 
+        private readonly DiagnosticDescriptor _descriptor =
+            new DiagnosticDescriptor("TypeWrapperGenMessage", "Test", "{0}", "TypeWrapper", DiagnosticSeverity.Warning, true);
+
         public void Execute(GeneratorExecutionContext context)
         {
+            context.ReportDiagnostic(Diagnostic.Create(_descriptor, Location.None, "StructWrapper!"));
             TypeWrapAttributeSyntaxReceiver syntaxReceiver = (TypeWrapAttributeSyntaxReceiver)context.SyntaxReceiver;
-            ClassDeclarationSyntax userClass = syntaxReceiver?.ClassToAugment;
+            StructDeclarationSyntax userStruct = syntaxReceiver?.StructToAugment;
             string wrappedType = syntaxReceiver?.WrappedType;
-            if (userClass == null || wrappedType == null) return;
+            if (userStruct == null || wrappedType == null) return;
+            context.ReportDiagnostic(Diagnostic.Create(_descriptor, Location.None, $"{userStruct.Identifier.Text}"));
+            context.ReportDiagnostic(Diagnostic.Create(_descriptor, Location.None, $"{wrappedType}"));
+
+            foreach (var namespaceDeclarationSyntax in syntaxReceiver.Namespaces)
+            {
+                context.ReportDiagnostic(Diagnostic.Create(_descriptor, Location.None, $"NS: {namespaceDeclarationSyntax}"));
+            }
+
+            string namespaceName = syntaxReceiver.Namespaces.First().Name.ToString();
+            string namespaceClause = namespaceName == "" ? "" : $"namespace {namespaceName};";
+
+            var nodes = userStruct.SyntaxTree.GetRoot().DescendantNodes();
+            foreach (SyntaxNode node in nodes)
+            {
+                context.ReportDiagnostic(Diagnostic.Create(_descriptor, Location.None, $"{node}, {node.GetType().Name}"));
+            }
+            
+            
             SourceText sourceText = SourceText.From($@"
-            public partial struct {userClass.Identifier}
+            using System;
+            {namespaceClause}
+
+            partial struct {userStruct.Identifier.Text}
             {{
-                public readonly {wrappedType} Value;   
-                private void {userClass.Identifier}({wrappedType} rawValue)
+                public readonly {wrappedType} Value;
+                public {userStruct.Identifier.Text}({wrappedType} rawValue)
                 {{
                     this.Value = rawValue;
                 }}
+
+                public static void Wrap({wrappedType} rawValue) 
+                {{
+                }}
+
             }}", Encoding.UTF8);
-            context.AddSource($"{userClass.Identifier.Text}.GeneratedWrapper.cs", sourceText);
+            context.AddSource($"{userStruct.Identifier.Text}.GeneratedWrapper.cs", sourceText);
         }
 
         class TypeWrapAttributeSyntaxReceiver : ISyntaxReceiver
         {
-            public ClassDeclarationSyntax ClassToAugment { get; private set; }
+            public StructDeclarationSyntax StructToAugment { get; private set; }
             public string WrappedType { get; private set; }
+            public List<NamespaceDeclarationSyntax> Namespaces { get; private set; }
 
             public void OnVisitSyntaxNode(SyntaxNode syntaxNode)
             {
-                if (syntaxNode is not ClassDeclarationSyntax cds)
+                if (syntaxNode is not StructDeclarationSyntax s)
                     return;
 
-                WrappedType = null;
-                foreach (var attributeList in cds.AttributeLists)
+                if (s.Identifier.Text == "WrappedInt")
                 {
-                    // TODO check if it has more than one Attribute 
-                    foreach (var attribute in attributeList.Attributes)
-                    {
-                        var attributeName = attribute.Name.ToString();
-                        if (attributeName is "TypeWrapper" or "TypeWrapperAttribute")
-                        {
-                            WrappedType = attribute.ArgumentList.Arguments[0].Expression.ToString();
-                            break;
-                        }
-                    }
+                    StructToAugment = s;
                 }
+                else
+                {
+                    return;
+                }
+                
+                Namespaces = s.SyntaxTree.GetRoot().DescendantNodes().OfType<NamespaceDeclarationSyntax>().ToList();
+
+                WrappedType = "int";
+                // foreach (var attributeList in s.AttributeLists)
+                // {
+                //     // TODO check if it has more than one Attribute 
+                //     foreach (var attribute in attributeList.Attributes)
+                //     {
+                //         var attributeName = attribute.Name.ToString();
+                //         if (attributeName is "TypeWrapper" or "TypeWrapperAttribute")
+                //         {
+                //             if (attribute.ArgumentList == null) continue;
+                //             WrappedType = attribute.ArgumentList.Arguments[0].Expression.ToString();
+                //             break;
+                //         }
+                //     }
+                // }
 
                 if (WrappedType == null)
                     return;
 
-                ClassToAugment = cds;
+                StructToAugment = s;
             }
         }
     }

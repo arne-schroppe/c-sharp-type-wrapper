@@ -1,12 +1,13 @@
 ﻿using TypeWrapperSourceGenerator;
 
-namespace TypeWrapperSourceGeneratorTests;
+namespace TypeWrapperSourceGeneratorTests
+{
+    
+[TypeWrapper(typeof(int))]
+partial struct WrappedInt { }
 
 public class SourceGeneratorTests
 {
-    
-    [TypeWrapper(typeof(int))]
-    partial struct WrappedInt { }
     
     [SetUp]
     public void Setup()
@@ -17,8 +18,9 @@ public class SourceGeneratorTests
     public void It_generates_a_type_wrapped_int()
     {
         // Given
-        //WrappedInt wrappedInt = new(123);
+        WrappedInt wrappedInt = new(123);
 
         // Then
     }
+}
 }
