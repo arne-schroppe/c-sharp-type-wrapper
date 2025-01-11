@@ -25,18 +25,21 @@ namespace TypeWrapperSourceGeneratorTests
 
     class RefType : IEquatable<RefType>
     {
-        public RefType(int value)
+        private readonly int _value;
+        private readonly int _hashCode;
+
+        public RefType(int value, int? hashCode = null)
         {
-            Value = value;
+            _value = value;
+            _hashCode = hashCode ?? value.GetHashCode();
         }
 
-        private int Value { get; }
 
         public bool Equals(RefType? other)
         {
             if (other is null) return false;
             if (ReferenceEquals(this, other)) return true;
-            return Value == other.Value;
+            return _value == other._value;
         }
 
         public override bool Equals(object? obj)
@@ -49,7 +52,7 @@ namespace TypeWrapperSourceGeneratorTests
 
         public override int GetHashCode()
         {
-            return Value;
+            return _hashCode;
         }
     }
 
@@ -110,6 +113,17 @@ namespace TypeWrapperSourceGeneratorTests
             Assert.That(wrapped, Is.EqualTo(wrapped2));
             Assert.That(wrapped, Is.Not.EqualTo(wrapped3));
         }
+        
+        [Test]
+        public void It_returns_the_underlying_types_hashcode()
+        {
+            // Given  
+            WrappedRefType wrapped = new(new RefType(123, 456));
+            
+            // Then
+            Assert.That(wrapped.GetHashCode(), Is.EqualTo(456));
+        }
+
         
     }
 }

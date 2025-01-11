@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using Microsoft.CodeAnalysis;
@@ -74,6 +73,11 @@ namespace TypeWrapperSourceGenerator
                 public override bool Equals(object obj)
                 {{
                     return obj is {typeName} other && Equals(other);
+                }}
+
+                public override int GetHashCode()
+                {{
+                    return Value.GetHashCode();
                 }}
 
             }}", Encoding.UTF8);
