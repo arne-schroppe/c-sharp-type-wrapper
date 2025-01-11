@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using Microsoft.CodeAnalysis;
@@ -24,25 +25,12 @@ namespace TypeWrapperSourceGenerator
             TypeWrapAttributeSyntaxReceiver syntaxReceiver = (TypeWrapAttributeSyntaxReceiver)context.SyntaxReceiver;
             StructDeclarationSyntax userStruct = syntaxReceiver?.StructToAugment;
             string wrappedType = syntaxReceiver?.WrappedType;
-            if (userStruct == null || wrappedType == null) return;
-            context.ReportDiagnostic(Diagnostic.Create(_descriptor, Location.None, $"{userStruct.Identifier.Text}"));
-            context.ReportDiagnostic(Diagnostic.Create(_descriptor, Location.None, $"{wrappedType}"));
 
-            foreach (var namespaceDeclarationSyntax in syntaxReceiver.Namespaces)
-            {
-                context.ReportDiagnostic(Diagnostic.Create(_descriptor, Location.None, $"NS: {namespaceDeclarationSyntax}"));
-            }
+            if (userStruct == null || wrappedType == null) return;
 
             string namespaceName = syntaxReceiver.Namespaces.First().Name.ToString();
             string namespaceClause = namespaceName == "" ? "" : $"namespace {namespaceName};";
 
-            var nodes = userStruct.SyntaxTree.GetRoot().DescendantNodes();
-            foreach (SyntaxNode node in nodes)
-            {
-                context.ReportDiagnostic(Diagnostic.Create(_descriptor, Location.None, $"{node}, {node.GetType().Name}"));
-            }
-            
-            
             SourceText sourceText = SourceText.From($@"
             using System;
             {namespaceClause}
@@ -85,21 +73,26 @@ namespace TypeWrapperSourceGenerator
                 
                 Namespaces = s.SyntaxTree.GetRoot().DescendantNodes().OfType<NamespaceDeclarationSyntax>().ToList();
 
-                WrappedType = "int";
-                // foreach (var attributeList in s.AttributeLists)
-                // {
-                //     // TODO check if it has more than one Attribute 
-                //     foreach (var attribute in attributeList.Attributes)
-                //     {
-                //         var attributeName = attribute.Name.ToString();
-                //         if (attributeName is "TypeWrapper" or "TypeWrapperAttribute")
-                //         {
-                //             if (attribute.ArgumentList == null) continue;
-                //             WrappedType = attribute.ArgumentList.Arguments[0].Expression.ToString();
-                //             break;
-                //         }
-                //     }
-                // }
+                WrappedType = null;
+                foreach (var attributeList in s.AttributeLists)
+                {
+                    // TODO check if it has more than one Attribute 
+                    foreach (var attribute in attributeList.Attributes)
+                    {
+                        var attributeName = attribute.Name.ToString();
+                        if (attributeName is "TypeWrapper" or "TypeWrapperAttribute")
+                        {
+                            if (attribute.ArgumentList == null) continue;
+                            var firstArg = attribute.ArgumentList.Arguments[0];
+                            if (firstArg.Expression is TypeOfExpressionSyntax)
+                            {
+                                var typeOfExpression = firstArg.Expression as TypeOfExpressionSyntax;
+                                WrappedType = typeOfExpression?.Type.ToString();
+                            }
+                            break;
+                        }
+                    }
+                }
 
                 if (WrappedType == null)
                     return;

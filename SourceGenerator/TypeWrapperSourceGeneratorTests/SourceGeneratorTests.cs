@@ -2,25 +2,33 @@
 
 namespace TypeWrapperSourceGeneratorTests
 {
+    [TypeWrapper(typeof(int))]
+    partial struct WrappedInt
+    {
+    }
     
-[TypeWrapper(typeof(int))]
-partial struct WrappedInt { }
-
-public class SourceGeneratorTests
-{
-    
-    [SetUp]
-    public void Setup()
+    [TypeWrapper(typeof(string))]
+    partial struct WrappedString
     {
     }
 
-    [Test]
-    public void It_generates_a_type_wrapped_int()
+    public class SourceGeneratorTests
     {
-        // Given
-        WrappedInt wrappedInt = new(123);
+        [SetUp]
+        public void Setup()
+        {
+        }
 
-        // Then
+        [Test]
+        public void It_generates_a_type_wrapped_int()
+        {
+            // Given
+            WrappedInt wrappedInt = new(123);
+            // WrappedString wrappedString = new("hello");
+
+            // Then
+            Assert.That(wrappedInt.Value, Is.EqualTo(123));
+            // Assert.That(wrappedString.Value, Is.EqualTo("hello"));
+        }
     }
-}
 }

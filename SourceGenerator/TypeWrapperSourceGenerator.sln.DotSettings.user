@@ -4,7 +4,12 @@
 	<s:String x:Key="/Default/Environment/AssemblyExplorer/XmlDocument/@EntryValue">&lt;AssemblyExplorer&gt;
   &lt;Assembly Path="/Users/arneschroppe/Development/csharp-type-wrapper/SourceGenerator/TypeWrapperSourceGenerator/bin/Debug/netstandard2.0/TypeWrapperSourceGenerator.dll" /&gt;
 &lt;/AssemblyExplorer&gt;</s:String>
-	<s:String x:Key="/Default/Environment/UnitTesting/UnitTestSessionStore/Sessions/=3c6c9e8b_002D0a99_002D452f_002D92cc_002D6f83f50f760a/@EntryIndexedValue">&lt;SessionState ContinuousTestingMode="0" Name="SourceGeneratorTests" xmlns="urn:schemas-jetbrains-com:jetbrains-ut-session"&gt;
+	<s:String x:Key="/Default/Environment/UnitTesting/UnitTestSessionStore/Sessions/=1883d8ca_002D7e2a_002D4d63_002D969b_002D7f34e4c06c70/@EntryIndexedValue">&lt;SessionState ContinuousTestingMode="0" Name="SourceGeneratorTests #2" xmlns="urn:schemas-jetbrains-com:jetbrains-ut-session"&gt;
+  &lt;TestAncestor&gt;
+    &lt;TestId&gt;NUnit3x::BC6E784D-A726-41D6-8A28-2DE80AED1C46::net9.0::TypeWrapperSourceGeneratorTests.SourceGeneratorTests&lt;/TestId&gt;
+  &lt;/TestAncestor&gt;
+&lt;/SessionState&gt;</s:String>
+	<s:String x:Key="/Default/Environment/UnitTesting/UnitTestSessionStore/Sessions/=3c6c9e8b_002D0a99_002D452f_002D92cc_002D6f83f50f760a/@EntryIndexedValue">&lt;SessionState ContinuousTestingMode="0" IsActive="True" Name="SourceGeneratorTests" xmlns="urn:schemas-jetbrains-com:jetbrains-ut-session"&gt;
   &lt;TestAncestor&gt;
     &lt;TestId&gt;NUnit3x::BC6E784D-A726-41D6-8A28-2DE80AED1C46::net9.0::TypeWrapperSourceGeneratorTests.SourceGeneratorTests&lt;/TestId&gt;
   &lt;/TestAncestor&gt;
