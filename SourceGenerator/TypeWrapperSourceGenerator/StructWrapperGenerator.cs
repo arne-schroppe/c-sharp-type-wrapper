@@ -50,23 +50,30 @@ namespace TypeWrapperSourceGenerator
         {
             string namespaceClause =
                 structDescription.Namespace == "" ? "" : $"namespace {structDescription.Namespace};";
-            var structToAugment = structDescription.StructToAugment;
-            var wrappedType = structDescription.WrappedType;
+            StructDeclarationSyntax structToAugment = structDescription.StructToAugment;
+            string wrappedType = structDescription.WrappedType;
+            string typeName = structToAugment.Identifier.Text;
 
             SourceText sourceText = SourceText.From($@"
             using System;
             {namespaceClause}
 
-            partial struct {structToAugment.Identifier.Text}
+            partial struct {typeName} : IEquatable<{typeName}>
             {{
                 public readonly {wrappedType} Value;
-                public {structToAugment.Identifier.Text}({wrappedType} rawValue)
+                public {typeName}({wrappedType} rawValue)
                 {{
                     this.Value = rawValue;
                 }}
 
-                public static void Wrap({wrappedType} rawValue) 
+                public bool Equals({typeName} other)
                 {{
+                    return Value.Equals(other.Value);
+                }}
+
+                public override bool Equals(object obj)
+                {{
+                    return obj is {typeName} other && Equals(other);
                 }}
 
             }}", Encoding.UTF8);

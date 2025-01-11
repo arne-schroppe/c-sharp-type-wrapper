@@ -7,9 +7,50 @@ namespace TypeWrapperSourceGeneratorTests
     {
     }
     
+    [TypeWrapper(typeof(int))]
+    partial struct OtherWrappedInt
+    {
+    }
+    
     [TypeWrapper(typeof(string))]
     partial struct WrappedString
     {
+    }
+    
+    
+    [TypeWrapper(typeof(RefType))]
+    partial struct WrappedRefType
+    {
+    }
+
+    class RefType : IEquatable<RefType>
+    {
+        public RefType(int value)
+        {
+            Value = value;
+        }
+
+        private int Value { get; }
+
+        public bool Equals(RefType? other)
+        {
+            if (other is null) return false;
+            if (ReferenceEquals(this, other)) return true;
+            return Value == other.Value;
+        }
+
+        public override bool Equals(object? obj)
+        {
+            if (obj is null) return false;
+            if (ReferenceEquals(this, obj)) return true;
+            if (obj.GetType() != GetType()) return false;
+            return Equals((RefType)obj);
+        }
+
+        public override int GetHashCode()
+        {
+            return Value;
+        }
     }
 
     public class SourceGeneratorTests
@@ -30,5 +71,45 @@ namespace TypeWrapperSourceGeneratorTests
             Assert.That(wrappedInt.Value, Is.EqualTo(123));
             Assert.That(wrappedString.Value, Is.EqualTo("hello"));
         }
+
+        [Test]
+        public void It_is_equal_to_another_instance_with_the_same_value()
+        {
+            // Given  
+            WrappedInt wrapped = new(123);
+            WrappedInt wrapped2 = new(123);
+            WrappedInt wrapped3 = new(124);
+            
+            // Then
+            Assert.That(wrapped, Is.EqualTo(wrapped2));
+            Assert.That(wrapped, Is.Not.EqualTo(wrapped3));
+        }
+        
+        [Test]
+        public void It_is_not_equal_to_another_type_with_the_same_value()
+        {
+            // Given  
+            WrappedInt wrapped = new(123);
+            OtherWrappedInt wrapped2 = new(123);
+            
+            // Then
+            // ReSharper disable once SuspiciousTypeConversion.Global
+            // ReSharper disable once UsageOfDefaultStructEquality
+            Assert.That(wrapped.Equals(wrapped2), Is.False);
+        }
+        
+        [Test]
+        public void It_compares_reference_types_using_their_equality_methods()
+        {
+            // Given  
+            WrappedRefType wrapped = new(new RefType(123));
+            WrappedRefType wrapped2 = new(new RefType(123));
+            WrappedRefType wrapped3 = new(new RefType(124));
+            
+            // Then
+            Assert.That(wrapped, Is.EqualTo(wrapped2));
+            Assert.That(wrapped, Is.Not.EqualTo(wrapped3));
+        }
+        
     }
 }
