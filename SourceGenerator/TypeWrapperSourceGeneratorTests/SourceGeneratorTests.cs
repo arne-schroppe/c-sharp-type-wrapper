@@ -108,9 +108,9 @@ namespace TypeWrapperSourceGeneratorTests
         public void It_compares_reference_types_using_their_equality_methods()
         {
             // Given  
-            WrappedRefType wrapped = new(new RefType(123));
-            WrappedRefType wrapped2 = new(new RefType(123));
-            WrappedRefType wrapped3 = new(new RefType(124));
+            WrappedRefType wrapped = new(new RefType(123, 1));
+            WrappedRefType wrapped2 = new(new RefType(123, 2));
+            WrappedRefType wrapped3 = new(new RefType(124, 1));
             
             // Then
             Assert.That(wrapped, Is.EqualTo(wrapped2));
