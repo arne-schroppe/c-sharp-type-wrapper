@@ -11,34 +11,56 @@ namespace TypeWrapperSourceGenerator
     [Generator]
     internal class StructWrapperGenerator : ISourceGenerator
     {
+        private readonly struct WrappedStructDescription
+        {
+            public readonly StructDeclarationSyntax StructToAugment;
+            public readonly string WrappedType;
+            public readonly string Namespace;
+
+            public WrappedStructDescription(StructDeclarationSyntax structToAugment, string wrappedType, string ns)
+            {
+                StructToAugment = structToAugment;
+                WrappedType = wrappedType;
+                Namespace = ns;
+            }
+        }
+
         public void Initialize(GeneratorInitializationContext context)
         {
             context.RegisterForSyntaxNotifications(() => new TypeWrapAttributeSyntaxReceiver());
         }
 
         private readonly DiagnosticDescriptor _descriptor =
-            new DiagnosticDescriptor("TypeWrapperGenMessage", "Test", "{0}", "TypeWrapper", DiagnosticSeverity.Warning, true);
+            new DiagnosticDescriptor("TypeWrapperGenMessage", "Test", "{0}", "TypeWrapper", DiagnosticSeverity.Warning,
+                true);
 
         public void Execute(GeneratorExecutionContext context)
         {
-            context.ReportDiagnostic(Diagnostic.Create(_descriptor, Location.None, "StructWrapper!"));
             TypeWrapAttributeSyntaxReceiver syntaxReceiver = (TypeWrapAttributeSyntaxReceiver)context.SyntaxReceiver;
-            StructDeclarationSyntax userStruct = syntaxReceiver?.StructToAugment;
-            string wrappedType = syntaxReceiver?.WrappedType;
+            if (syntaxReceiver == null) return;
 
-            if (userStruct == null || wrappedType == null) return;
+            foreach (WrappedStructDescription structDescription in syntaxReceiver.WrappedStructDescriptions)
+            {
+                GenerateStructWrapper(structDescription, context);
+            }
+        }
 
-            string namespaceName = syntaxReceiver.Namespaces.First().Name.ToString();
-            string namespaceClause = namespaceName == "" ? "" : $"namespace {namespaceName};";
+        private void GenerateStructWrapper(WrappedStructDescription structDescription,
+            GeneratorExecutionContext context)
+        {
+            string namespaceClause =
+                structDescription.Namespace == "" ? "" : $"namespace {structDescription.Namespace};";
+            var structToAugment = structDescription.StructToAugment;
+            var wrappedType = structDescription.WrappedType;
 
             SourceText sourceText = SourceText.From($@"
             using System;
             {namespaceClause}
 
-            partial struct {userStruct.Identifier.Text}
+            partial struct {structToAugment.Identifier.Text}
             {{
                 public readonly {wrappedType} Value;
-                public {userStruct.Identifier.Text}({wrappedType} rawValue)
+                public {structToAugment.Identifier.Text}({wrappedType} rawValue)
                 {{
                     this.Value = rawValue;
                 }}
@@ -48,32 +70,23 @@ namespace TypeWrapperSourceGenerator
                 }}
 
             }}", Encoding.UTF8);
-            context.AddSource($"{userStruct.Identifier.Text}.GeneratedWrapper.cs", sourceText);
+            context.AddSource($"{structToAugment.Identifier.Text}.GeneratedWrapper.cs", sourceText);
         }
 
         class TypeWrapAttributeSyntaxReceiver : ISyntaxReceiver
         {
-            public StructDeclarationSyntax StructToAugment { get; private set; }
-            public string WrappedType { get; private set; }
-            public List<NamespaceDeclarationSyntax> Namespaces { get; private set; }
+            public List<WrappedStructDescription> WrappedStructDescriptions { get; } = new();
 
             public void OnVisitSyntaxNode(SyntaxNode syntaxNode)
             {
                 if (syntaxNode is not StructDeclarationSyntax s)
                     return;
 
-                if (s.Identifier.Text == "WrappedInt")
-                {
-                    StructToAugment = s;
-                }
-                else
-                {
-                    return;
-                }
-                
-                Namespaces = s.SyntaxTree.GetRoot().DescendantNodes().OfType<NamespaceDeclarationSyntax>().ToList();
+                var namespaces = string.Join(".",
+                    s.SyntaxTree.GetRoot().DescendantNodes().OfType<NamespaceDeclarationSyntax>()
+                        .Select(ns => ns.Name.ToString()));
 
-                WrappedType = null;
+                string wrappedType = null;
                 foreach (var attributeList in s.AttributeLists)
                 {
                     // TODO check if it has more than one Attribute 
@@ -87,17 +100,18 @@ namespace TypeWrapperSourceGenerator
                             if (firstArg.Expression is TypeOfExpressionSyntax)
                             {
                                 var typeOfExpression = firstArg.Expression as TypeOfExpressionSyntax;
-                                WrappedType = typeOfExpression?.Type.ToString();
+                                wrappedType = typeOfExpression?.Type.ToString();
                             }
+
                             break;
                         }
                     }
                 }
 
-                if (WrappedType == null)
+                if (wrappedType == null)
                     return;
 
-                StructToAugment = s;
+                WrappedStructDescriptions.Add(new WrappedStructDescription(s, wrappedType, namespaces));
             }
         }
     }

@@ -24,11 +24,11 @@ namespace TypeWrapperSourceGeneratorTests
         {
             // Given
             WrappedInt wrappedInt = new(123);
-            // WrappedString wrappedString = new("hello");
+            WrappedString wrappedString = new("hello");
 
             // Then
             Assert.That(wrappedInt.Value, Is.EqualTo(123));
-            // Assert.That(wrappedString.Value, Is.EqualTo("hello"));
+            Assert.That(wrappedString.Value, Is.EqualTo("hello"));
         }
     }
 }
