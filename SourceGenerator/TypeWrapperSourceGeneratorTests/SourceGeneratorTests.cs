@@ -1,4 +1,5 @@
-﻿using TypeWrapperSourceGenerator;
+﻿using Newtonsoft.Json;
+using TypeWrapperSourceGenerator;
 
 namespace TypeWrapperSourceGeneratorTests
 {
@@ -19,6 +20,16 @@ namespace TypeWrapperSourceGeneratorTests
     
     [TypeWrapper(typeof(RefType))]
     readonly partial struct WrappedRefType
+    {
+    }
+    
+    [TypeWrapper(typeof(int), WrapperFeature.NewtonSoftJsonConverter | WrapperFeature.SystemTextJsonConverter)]
+    readonly partial struct WrappedJsonInt
+    {
+    }
+    
+    [TypeWrapper(typeof(string), WrapperFeature.NewtonSoftJsonConverter | WrapperFeature.SystemTextJsonConverter)]
+    readonly partial struct WrappedJsonString
     {
     }
 
@@ -93,6 +104,26 @@ namespace TypeWrapperSourceGeneratorTests
             Assert.That(wrapped.GetHashCode(), Is.EqualTo(456));
         }
 
+        [Test]
+        public void It_serializes_to_json_and_back_using_newtonsoft_json()
+        {
+            // Given  
+            WrappedJsonInt wrapped = new(123);
+            WrappedJsonString wrapped2 = new("test");
+            
+            // When
+            string jsonInt = JsonConvert.SerializeObject(wrapped);
+            WrappedJsonInt deserializedInt = JsonConvert.DeserializeObject<WrappedJsonInt>(jsonInt);
+            string jsonString = JsonConvert.SerializeObject(wrapped2);
+            WrappedJsonString deserializedString = JsonConvert.DeserializeObject<WrappedJsonString>(jsonString);
+            
+            // Then
+            Assert.That(deserializedInt, Is.EqualTo(wrapped));
+            Assert.That(jsonInt, Is.EqualTo("123"));
+            
+            Assert.That(deserializedString, Is.EqualTo(wrapped2));
+            Assert.That(jsonString, Is.EqualTo("\"test\""));
+        }
         
     }
 }

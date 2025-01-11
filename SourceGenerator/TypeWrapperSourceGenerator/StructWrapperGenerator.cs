@@ -17,14 +17,18 @@ namespace TypeWrapperSourceGenerator
             public readonly string WrappedType;
             public readonly string Namespace;
             public readonly bool IsReadOnly;
+            public readonly WrapperFeature Features;
 
-            public WrappedStructDescription(StructDeclarationSyntax structToAugment, string wrappedType, string ns,
-                bool isReadOnly)
+            public WrappedStructDescription(
+                StructDeclarationSyntax structToAugment, 
+                string wrappedType, string ns,
+                bool isReadOnly, WrapperFeature features)
             {
-                IsReadOnly = isReadOnly;
                 StructToAugment = structToAugment;
                 WrappedType = wrappedType;
                 Namespace = ns;
+                IsReadOnly = isReadOnly;
+                Features = features;
             }
         }
 
@@ -54,7 +58,8 @@ namespace TypeWrapperSourceGenerator
             bool isReadOnly = structDescription.IsReadOnly;
             StructDeclarationSyntax structToAugment = structDescription.StructToAugment;
             string wrappedType = structDescription.WrappedType;
-            string typeName = structToAugment.Identifier.Text;
+            string structName = structToAugment.Identifier.Text;
+            bool hasNewtonSoftJson = (structDescription.Features & WrapperFeature.NewtonSoftJsonConverter) != 0;
             
             if (!isReadOnly)
             {
@@ -65,27 +70,54 @@ namespace TypeWrapperSourceGenerator
             string readonlyClause = isReadOnly ? "readonly" : "";
             string namespaceClause =
                 structDescription.Namespace == "" ? "" : $"namespace {structDescription.Namespace};";
+            string newtonSoftJsonImport = hasNewtonSoftJson ? "using Newtonsoft.Json;" : "";
+            string newtonSoftJsonConverterAttribute = "";
+            string newtonSoftJsonConverterClass = "";
+
+            if (hasNewtonSoftJson)
+            {
+                newtonSoftJsonConverterAttribute = $"[JsonConverter(typeof({structName}.JsonConverter))]";
+                newtonSoftJsonConverterClass = $@"
+                private class JsonConverter : JsonConverter<{structName}>
+                {{
+                    public override void WriteJson(JsonWriter writer, {structName} value, JsonSerializer serializer)
+                    {{
+                        serializer.Serialize(writer, value.Value);
+                    }}
+        
+                    public override {structName} ReadJson(JsonReader reader, Type objectType, {structName} existingValue,
+                        bool hasExistingValue,
+                        JsonSerializer serializer)
+                    {{
+                        {wrappedType} val = serializer.Deserialize<{wrappedType}>(reader);
+                        return new {structName}(val);
+                    }}
+                }}";
+            }
+            
 
             SourceText sourceText = SourceText.From($@"
             using System;
+            {newtonSoftJsonImport}
             {namespaceClause}
 
-            {readonlyClause} partial struct {typeName} : IEquatable<{typeName}>
+            {newtonSoftJsonConverterAttribute}
+            {readonlyClause} partial struct {structName} : IEquatable<{structName}>
             {{
                 public readonly {wrappedType} Value;
-                public {typeName}({wrappedType} rawValue)
+                public {structName}({wrappedType} rawValue)
                 {{
                     this.Value = rawValue;
                 }}
 
-                public bool Equals({typeName} other)
+                public bool Equals({structName} other)
                 {{
                     return Value.Equals(other.Value);
                 }}
 
                 public override bool Equals(object obj)
                 {{
-                    return obj is {typeName} other && Equals(other);
+                    return obj is {structName} other && Equals(other);
                 }}
 
                 public override int GetHashCode()
@@ -93,17 +125,21 @@ namespace TypeWrapperSourceGenerator
                     return Value.GetHashCode();
                 }}
 
-                public static bool operator ==({typeName} left, {typeName} right)
+                public static bool operator ==({structName} left, {structName} right)
                 {{
                     return left.Equals(right);
                 }}
 
-                public static bool operator !=({typeName} left, {typeName} right)
+                public static bool operator !=({structName} left, {structName} right)
                 {{
-                    return left.Equals(right);
+                    return !left.Equals(right);
                 }}
 
-            }}", Encoding.UTF8);
+                public override string ToString() => $""[{structName}({{Value.ToString()}})]"";
+
+                {newtonSoftJsonConverterClass}
+
+        }}", Encoding.UTF8);
             context.AddSource($"{structToAugment.Identifier.Text}.GeneratedWrapper.cs", sourceText);
         }
 
@@ -121,6 +157,7 @@ namespace TypeWrapperSourceGenerator
                         .Select(ns => ns.Name.ToString()));
 
                 string wrappedType = null;
+                WrapperFeature wrapperFeatures = WrapperFeature.None;
                 foreach (var attributeList in s.AttributeLists)
                 {
                     // TODO check if it has more than one Attribute 
@@ -137,6 +174,15 @@ namespace TypeWrapperSourceGenerator
                                 wrappedType = typeOfExpression?.Type.ToString();
                             }
 
+                            if (attribute.ArgumentList.Arguments.Count > 1)
+                            {
+                                var rawFeatures = attribute.ArgumentList.Arguments[1].Expression.GetText(Encoding.UTF8).ToString();
+                                if (rawFeatures.Contains(nameof(WrapperFeature.NewtonSoftJsonConverter)))
+                                {
+                                    wrapperFeatures |= WrapperFeature.NewtonSoftJsonConverter;
+                                }
+                            }
+
                             break;
                         }
                     }
@@ -147,7 +193,7 @@ namespace TypeWrapperSourceGenerator
                 
                 bool isReadOnly = s.Modifiers.Any(m => m.IsKind(SyntaxKind.ReadOnlyKeyword));
 
-                WrappedStructDescriptions.Add(new WrappedStructDescription(s, wrappedType, namespaces, isReadOnly));
+                WrappedStructDescriptions.Add(new WrappedStructDescription(s, wrappedType, namespaces, isReadOnly, wrapperFeatures));
             }
         }
     }
