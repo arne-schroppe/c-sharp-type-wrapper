@@ -1,0 +1,16 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TypeWrapperSourceGenerator", "TypeWrapperSourceGenerator\TypeWrapperSourceGenerator.csproj", "{8DE8C505-93F5-48F0-BA50-B02B6FCD867E}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{8DE8C505-93F5-48F0-BA50-B02B6FCD867E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8DE8C505-93F5-48F0-BA50-B02B6FCD867E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8DE8C505-93F5-48F0-BA50-B02B6FCD867E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8DE8C505-93F5-48F0-BA50-B02B6FCD867E}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+EndGlobal
