@@ -80,6 +80,16 @@ namespace TypeWrapperSourceGenerator
                     return Value.GetHashCode();
                 }}
 
+                public static bool operator ==({typeName} left, {typeName} right)
+                {{
+                    return left.Equals(right);
+                }}
+
+                public static bool operator !=({typeName} left, {typeName} right)
+                {{
+                    return !left.Equals(right);
+                }}
+
             }}", Encoding.UTF8);
             context.AddSource($"{structToAugment.Identifier.Text}.GeneratedWrapper.cs", sourceText);
         }

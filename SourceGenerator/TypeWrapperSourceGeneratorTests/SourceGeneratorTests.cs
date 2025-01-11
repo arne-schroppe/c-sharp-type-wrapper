@@ -86,6 +86,9 @@ namespace TypeWrapperSourceGeneratorTests
             // Then
             Assert.That(wrapped, Is.EqualTo(wrapped2));
             Assert.That(wrapped, Is.Not.EqualTo(wrapped3));
+            
+            Assert.That(wrapped == wrapped2);
+            Assert.That(wrapped != wrapped3);
         }
         
         [Test]
