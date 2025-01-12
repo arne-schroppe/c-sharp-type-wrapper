@@ -44,6 +44,17 @@ namespace TypeWrapperSourceGeneratorTests
     readonly partial struct WrappedEnum
     {
     }
+    
+    [TypeWrapper(typeof(int))]
+    readonly partial struct GenericWrappedInt<T> where T : struct
+    {
+    }
+    
+    [TypeWrapper(typeof(string))]
+    readonly partial struct GenericWrappedString<T> where T : struct
+    {
+    }
+    
 
     partial class SomeClass
     {
@@ -82,7 +93,7 @@ namespace TypeWrapperSourceGeneratorTests
         }
 
         [Test]
-        public void It_generates_a_type_wrapped_int()
+        public void It_generates_a_type_wrapped_value()
         {
             // Given
             WrappedInt wrappedInt = new(123);
@@ -226,6 +237,18 @@ namespace TypeWrapperSourceGeneratorTests
             Assert.That(deserialized.IntDictionary[wrapped], Is.EqualTo(111));
             Assert.That(deserialized.StringDictionary[wrapped2], Is.EqualTo(222));
             Assert.That(deserialized.EnumDictionary[wrapped3], Is.EqualTo(333));
+        }
+        
+        [Test]
+        public void It_generates_a_type_wrapped_value_where_the_wrapper_is_generic()
+        {
+            // Given
+            GenericWrappedInt<int> wrappedInt = new(123);
+            GenericWrappedString<int> wrappedString = new("hello");
+
+            // Then
+            Assert.That(wrappedInt.Value, Is.EqualTo(123));
+            Assert.That(wrappedString.Value, Is.EqualTo("hello"));
         }
     }
 }

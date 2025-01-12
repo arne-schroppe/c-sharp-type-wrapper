@@ -62,14 +62,12 @@ namespace TypeWrapperSourceGenerator
         private void GenerateStructWrapper(WrappedStructDescription structDescription,
             GeneratorExecutionContext context)
         {
-            Compilation compilation = context.Compilation;
-            SemanticModel semanticModel = compilation.GetSemanticModel(structDescription.StructToAugment.SyntaxTree);
-            
             bool isReadOnly = structDescription.IsReadOnly;
             StructDeclarationSyntax structToAugment = structDescription.StructToAugment;
             string wrappedType = structDescription.WrappedType;
             string structName = structToAugment.Identifier.Text;
             bool hasNewtonSoftJson = (structDescription.Features & WrapperFeature.NewtonSoftJsonConverter) != 0;
+            
             
             if (!isReadOnly)
             {
@@ -87,6 +85,15 @@ namespace TypeWrapperSourceGenerator
                 }
             }
 
+            bool isGeneric = structToAugment.TypeParameterList != null;
+            string typeParametersClause = "";
+            if (isGeneric)
+            {
+                var parameters = structToAugment.TypeParameterList.Parameters.Select(p => p.Identifier.Text).ToList();
+                typeParametersClause = "<" + string.Join(", ", parameters) + ">";
+            }
+
+            string outerTypeName = $"{structName}{typeParametersClause}";
 
             string enclosingClassesDeclarationsStart = "";
             string enclosingClassesDeclarationsEnd = "";
@@ -144,17 +151,17 @@ namespace TypeWrapperSourceGenerator
                 if (wrappedType.ToLowerInvariant() == "string")
                 {
                     convertFromImplementation = $@"
-                        return JsonConvert.DeserializeObject<{structName}>($""\""{{(string)value}}\"""");
+                        return JsonConvert.DeserializeObject<{outerTypeName}>($""\""{{(string)value}}\"""");
                     ";
                     convertToImplementation = $@"
-                        return (({structName})value).Value;
+                        return (({outerTypeName})value).Value;
                     ";
                 }
                 else
                 {
                     convertFromImplementation = $@"
                         var wrapped = JsonConvert.DeserializeObject<{wrappedType}>((string)value);
-                        return new {structName}(wrapped);
+                        return new {outerTypeName}(wrapped);
                     ";
                     convertToImplementation = $@"
                         return JsonConvert.SerializeObject(value);
@@ -181,7 +188,6 @@ namespace TypeWrapperSourceGenerator
                 ";
             }
             
-
             SourceText sourceText = SourceText.From($@"
             #nullable disable
             using System;
@@ -192,7 +198,7 @@ namespace TypeWrapperSourceGenerator
             {enclosingClassesDeclarationsStart}
             {newtonSoftJsonConverterAttribute}
             {stringConverterAttribute}
-            {readonlyClause} partial struct {structName} : IEquatable<{structName}>
+            {readonlyClause} partial struct {outerTypeName} : IEquatable<{outerTypeName}>
             {{
                 public readonly {wrappedType} Value;
                 public {structName}({wrappedType} rawValue)
@@ -200,14 +206,14 @@ namespace TypeWrapperSourceGenerator
                     this.Value = rawValue;
                 }}
 
-                public bool Equals({structName} other)
+                public bool Equals({outerTypeName} other)
                 {{
                     return Value.Equals(other.Value);
                 }}
 
                 public override bool Equals(object obj)
                 {{
-                    return obj is {structName} other && Equals(other);
+                    return obj is {outerTypeName} other && Equals(other);
                 }}
 
                 public override int GetHashCode()
@@ -215,12 +221,12 @@ namespace TypeWrapperSourceGenerator
                     return Value.GetHashCode();
                 }}
 
-                public static bool operator ==({structName} left, {structName} right)
+                public static bool operator ==({outerTypeName} left, {outerTypeName} right)
                 {{
                     return left.Equals(right);
                 }}
 
-                public static bool operator !=({structName} left, {structName} right)
+                public static bool operator !=({outerTypeName} left, {outerTypeName} right)
                 {{
                     return !left.Equals(right);
                 }}
