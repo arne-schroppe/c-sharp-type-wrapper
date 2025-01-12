@@ -38,8 +38,15 @@ namespace TypeWrapperSourceGenerator
         }
 
         private readonly DiagnosticDescriptor _missingReadOnlyDescriptor =
-            new DiagnosticDescriptor("SWGen001", "Missing readonly", "Struct should be readonly", "StructWrapper", DiagnosticSeverity.Warning,
+            new ("SWGenW001", "Missing readonly", "Struct should be readonly", "StructWrapper", DiagnosticSeverity.Warning,
                 true);
+        
+        private readonly DiagnosticDescriptor _enclosingClassNotPartial =
+            new ("SWGenE001", "Enclosing class not partial", "The enclosing class must be partial: {0}", "StructWrapper", DiagnosticSeverity.Error,
+                true);
+        
+        private readonly DiagnosticDescriptor _infoDescriptor =
+            new ("SWGenI000", "Info", "{0}", "StructWrapper", DiagnosticSeverity.Warning, true);
 
         public void Execute(GeneratorExecutionContext context)
         {
@@ -55,6 +62,9 @@ namespace TypeWrapperSourceGenerator
         private void GenerateStructWrapper(WrappedStructDescription structDescription,
             GeneratorExecutionContext context)
         {
+            Compilation compilation = context.Compilation;
+            SemanticModel semanticModel = compilation.GetSemanticModel(structDescription.StructToAugment.SyntaxTree);
+            
             bool isReadOnly = structDescription.IsReadOnly;
             StructDeclarationSyntax structToAugment = structDescription.StructToAugment;
             string wrappedType = structDescription.WrappedType;
@@ -65,6 +75,26 @@ namespace TypeWrapperSourceGenerator
             {
                 context.ReportDiagnostic(Diagnostic.Create(_missingReadOnlyDescriptor,
                     structDescription.StructToAugment.GetLocation()));
+            }
+
+            List<ClassDeclarationSyntax> enclosingClasses = GetParentsOfType<ClassDeclarationSyntax>(structToAugment);
+            foreach (var enclosingClass in enclosingClasses)
+            {
+                if (!enclosingClass.Modifiers.Any(m => m.IsKind(SyntaxKind.PartialKeyword)))
+                {
+                    context.ReportDiagnostic(Diagnostic.Create(_enclosingClassNotPartial, enclosingClass.GetLocation(), enclosingClass.Identifier.Text));
+                    return;
+                }
+            }
+
+
+            string enclosingClassesDeclarationsStart = "";
+            string enclosingClassesDeclarationsEnd = "";
+            enclosingClasses.Reverse();
+            foreach (var enclosingClass in enclosingClasses)
+            {
+                enclosingClassesDeclarationsStart += $"partial class {enclosingClass.Identifier.Text} {{";
+                enclosingClassesDeclarationsEnd += "}";
             }
             
             string readonlyClause = isReadOnly ? "readonly" : "";
@@ -104,6 +134,7 @@ namespace TypeWrapperSourceGenerator
             {newtonSoftJsonImport}
             {namespaceStart}
 
+            {enclosingClassesDeclarationsStart}
             {newtonSoftJsonConverterAttribute}
             {readonlyClause} partial struct {structName} : IEquatable<{structName}>
             {{
@@ -143,9 +174,27 @@ namespace TypeWrapperSourceGenerator
                 {newtonSoftJsonConverterClass}
 
             }}
+
+            {enclosingClassesDeclarationsEnd}
             {namespaceEnd}
             ", Encoding.UTF8);
             context.AddSource($"{structToAugment.Identifier.Text}.GeneratedWrapper.cs", sourceText);
+        }
+
+        private List<T> GetParentsOfType<T>(SyntaxNode node) where T : SyntaxNode
+        {
+            List<T> parents = new List<T>();
+            var parent = node.Parent;
+            while (parent != null)
+            {
+                if (typeof(T).IsAssignableFrom(parent.GetType()))
+                {
+                    parents.Add((T)parent);
+                }
+                parent = parent.Parent;
+            }
+
+            return parents;
         }
 
         class TypeWrapAttributeSyntaxReceiver : ISyntaxReceiver
