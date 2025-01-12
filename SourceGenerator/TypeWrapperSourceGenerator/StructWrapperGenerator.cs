@@ -137,20 +137,45 @@ namespace TypeWrapperSourceGenerator
             {
                 stringConverterImport = "using System.ComponentModel;\nusing System.Globalization;";
                 stringConverterAttribute = $"[TypeConverter(typeof({structName}.StringTypeConverter))]";
+                string convertFromImplementation;
+                string convertToImplementation;
+
+                // This prevents additional quotation marks around serialized dictionary keys
+                if (wrappedType.ToLowerInvariant() == "string")
+                {
+                    convertFromImplementation = $@"
+                        return JsonConvert.DeserializeObject<{structName}>($""\""{{(string)value}}\"""");
+                    ";
+                    convertToImplementation = $@"
+                        return (({structName})value).Value;
+                    ";
+                }
+                else
+                {
+                    convertFromImplementation = $@"
+                        var wrapped = JsonConvert.DeserializeObject<{wrappedType}>((string)value);
+                        return new {structName}(wrapped);
+                    ";
+                    convertToImplementation = $@"
+                        return JsonConvert.SerializeObject(value);
+                    ";
+                }
+                
                 stringConverterClass = $@"
                 public class StringTypeConverter : TypeConverter 
                 {{
-                    public override bool CanConvertFrom(ITypeDescriptorContext context, Type sourceType) {{
+                    public override bool CanConvertFrom(ITypeDescriptorContext context, Type sourceType) 
+                    {{
                         return sourceType == typeof(string);
                     }}
 
-                    public override object ConvertFrom(ITypeDescriptorContext context, CultureInfo culture, object value) {{
-                        var wrapped = JsonConvert.DeserializeObject<{wrappedType}>((string)value);
-                        return new {structName}(wrapped);
+                    public override object ConvertFrom(ITypeDescriptorContext context, CultureInfo culture, object value) 
+                    {{
+                        {convertFromImplementation}
                     }}
 
                     public override object ConvertTo(ITypeDescriptorContext context, CultureInfo culture, object value, Type destinationType) {{
-                        return JsonConvert.SerializeObject(value);
+                        {convertToImplementation}
                     }}
                 }}
                 ";
