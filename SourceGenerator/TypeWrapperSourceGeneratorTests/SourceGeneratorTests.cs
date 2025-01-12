@@ -54,6 +54,13 @@ namespace TypeWrapperSourceGeneratorTests
         }
     }
 
+    [Serializable]
+    struct SerializableStruct
+    {
+        public Dictionary<WrappedJsonInt, int> IntDictionary;
+        public Dictionary<WrappedJsonString, int> StringDictionary;
+    }
+
     public class SourceGeneratorTests
     {
         [SetUp]
@@ -124,6 +131,20 @@ namespace TypeWrapperSourceGeneratorTests
             // Then
             Assert.That(wrapped.GetHashCode(), Is.EqualTo(456));
         }
+        
+        [Test]
+        public void It_generates_a_type_wrapper_inside_a_class()
+        {
+            // Given
+            SomeClass.ClassWrappedInt wrappedInt = new(123);
+            SomeClass.ClassWrappedString wrappedString = new("hello");
+            SomeClass.SomeClass2.DoubleClassWrappedString wrappedString2 = new("hello2");
+
+            // Then
+            Assert.That(wrappedInt.Value, Is.EqualTo(123));
+            Assert.That(wrappedString.Value, Is.EqualTo("hello"));
+            Assert.That(wrappedString2.Value, Is.EqualTo("hello2"));
+        }
 
         [Test]
         public void It_serializes_to_json_and_back_using_newtonsoft_json()
@@ -145,19 +166,45 @@ namespace TypeWrapperSourceGeneratorTests
             Assert.That(deserializedString, Is.EqualTo(wrapped2));
             Assert.That(jsonString, Is.EqualTo("\"test\""));
         }
-
+        
         [Test]
-        public void It_generates_a_type_wrapper_inside_a_class()
+        public void Wrapped_values_can_be_used_as_dictionary_keys()
         {
-            // Given
-            SomeClass.ClassWrappedInt wrappedInt = new(123);
-            SomeClass.ClassWrappedString wrappedString = new("hello");
-            SomeClass.SomeClass2.DoubleClassWrappedString wrappedString2 = new("hello2");
+            // Given  
+            Dictionary<WrappedInt, int> intDictionary = new();
+            Dictionary<WrappedString, int> stringDictionary = new();
+            WrappedInt wrapped = new(123);
+            WrappedString wrapped2 = new("test");
+
+            // When
+            intDictionary[wrapped] = 111;
+            stringDictionary[wrapped2] = 222;
 
             // Then
-            Assert.That(wrappedInt.Value, Is.EqualTo(123));
-            Assert.That(wrappedString.Value, Is.EqualTo("hello"));
-            Assert.That(wrappedString2.Value, Is.EqualTo("hello2"));
+            Assert.That(intDictionary[wrapped], Is.EqualTo(111));
+            Assert.That(stringDictionary[wrapped2], Is.EqualTo(222));
+        }
+        
+        [Test]
+        public void Wrapped_values_can_be_used_as_dictionary_keys_when_serializing_to_json()
+        {
+            // Given  
+            SerializableStruct serializableStruct = new();
+            serializableStruct.IntDictionary = new();
+            serializableStruct.StringDictionary = new();
+            WrappedJsonInt wrapped = new(123);
+            WrappedJsonString wrapped2 = new("test");
+            
+            serializableStruct.IntDictionary[wrapped] = 111;
+            serializableStruct.StringDictionary[wrapped2] = 222;
+
+            // When
+            string serialized = JsonConvert.SerializeObject(serializableStruct);
+            SerializableStruct deserialized = JsonConvert.DeserializeObject<SerializableStruct>(serialized);
+
+            // Then
+            Assert.That(deserialized.IntDictionary[wrapped], Is.EqualTo(111));
+            Assert.That(deserialized.StringDictionary[wrapped2], Is.EqualTo(222));
         }
     }
 }

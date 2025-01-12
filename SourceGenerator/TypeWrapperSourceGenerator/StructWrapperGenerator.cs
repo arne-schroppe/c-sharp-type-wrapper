@@ -128,14 +128,44 @@ namespace TypeWrapperSourceGenerator
                     }}
                 }}";
             }
+            
+            string stringConverterImport = "";
+            string stringConverterAttribute = "";
+            string stringConverterClass = "";
+            bool needsStringConverter = hasNewtonSoftJson;
+            if (needsStringConverter)
+            {
+                stringConverterImport = "using System.ComponentModel;\nusing System.Globalization;";
+                stringConverterAttribute = $"[TypeConverter(typeof({structName}.StringTypeConverter))]";
+                stringConverterClass = $@"
+                public class StringTypeConverter : TypeConverter 
+                {{
+                    public override bool CanConvertFrom(ITypeDescriptorContext context, Type sourceType) {{
+                        return sourceType == typeof(string);
+                    }}
+
+                    public override object ConvertFrom(ITypeDescriptorContext context, CultureInfo culture, object value) {{
+                        var wrapped = JsonConvert.DeserializeObject<{wrappedType}>((string)value);
+                        return new {structName}(wrapped);
+                    }}
+
+                    public override object ConvertTo(ITypeDescriptorContext context, CultureInfo culture, object value, Type destinationType) {{
+                        return JsonConvert.SerializeObject(value);
+                    }}
+                }}
+                ";
+            }
+            
 
             SourceText sourceText = SourceText.From($@"
             using System;
+            {stringConverterImport}
             {newtonSoftJsonImport}
             {namespaceStart}
 
             {enclosingClassesDeclarationsStart}
             {newtonSoftJsonConverterAttribute}
+            {stringConverterAttribute}
             {readonlyClause} partial struct {structName} : IEquatable<{structName}>
             {{
                 public readonly {wrappedType} Value;
@@ -169,10 +199,13 @@ namespace TypeWrapperSourceGenerator
                     return !left.Equals(right);
                 }}
 
-                public override string ToString() => $""[{structName}({{Value.ToString()}})]"";
+                public override string ToString() 
+                {{
+                    return $""[{structName}({{Value.ToString()}})]"";
+                }}
 
                 {newtonSoftJsonConverterClass}
-
+                {stringConverterClass}
             }}
 
             {enclosingClassesDeclarationsEnd}
