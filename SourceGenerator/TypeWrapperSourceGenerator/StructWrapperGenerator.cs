@@ -70,15 +70,17 @@ namespace TypeWrapperSourceGenerator
             string readonlyClause = isReadOnly ? "readonly" : "";
             string namespaceClause =
                 structDescription.Namespace == "" ? "" : $"namespace {structDescription.Namespace};";
-            string newtonSoftJsonImport = hasNewtonSoftJson ? "using Newtonsoft.Json;" : "";
+            
+            string newtonSoftJsonImport = "";
             string newtonSoftJsonConverterAttribute = "";
             string newtonSoftJsonConverterClass = "";
 
             if (hasNewtonSoftJson)
             {
+                newtonSoftJsonImport = "using Newtonsoft.Json;";
                 newtonSoftJsonConverterAttribute = $"[JsonConverter(typeof({structName}.JsonConverter))]";
                 newtonSoftJsonConverterClass = $@"
-                private class JsonConverter : JsonConverter<{structName}>
+                public class JsonConverter : JsonConverter<{structName}>
                 {{
                     public override void WriteJson(JsonWriter writer, {structName} value, JsonSerializer serializer)
                     {{
@@ -94,7 +96,6 @@ namespace TypeWrapperSourceGenerator
                     }}
                 }}";
             }
-            
 
             SourceText sourceText = SourceText.From($@"
             using System;

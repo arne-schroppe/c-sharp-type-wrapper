@@ -6,7 +6,6 @@ namespace TypeWrapperSourceGenerator
     public enum WrapperFeature
     {
         None = 0,
-        SystemTextJsonConverter = 1,
-        NewtonSoftJsonConverter = 2,
+        NewtonSoftJsonConverter = 1,
     }
 }
