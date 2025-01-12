@@ -68,8 +68,10 @@ namespace TypeWrapperSourceGenerator
             }
             
             string readonlyClause = isReadOnly ? "readonly" : "";
-            string namespaceClause =
-                structDescription.Namespace == "" ? "" : $"namespace {structDescription.Namespace};";
+            string namespaceStart =
+                structDescription.Namespace == "" ? "" : $"namespace {structDescription.Namespace} {{";
+            string namespaceEnd =
+                structDescription.Namespace == "" ? "" : "}";
             
             string newtonSoftJsonImport = "";
             string newtonSoftJsonConverterAttribute = "";
@@ -100,7 +102,7 @@ namespace TypeWrapperSourceGenerator
             SourceText sourceText = SourceText.From($@"
             using System;
             {newtonSoftJsonImport}
-            {namespaceClause}
+            {namespaceStart}
 
             {newtonSoftJsonConverterAttribute}
             {readonlyClause} partial struct {structName} : IEquatable<{structName}>
@@ -140,7 +142,9 @@ namespace TypeWrapperSourceGenerator
 
                 {newtonSoftJsonConverterClass}
 
-        }}", Encoding.UTF8);
+            }}
+            {namespaceEnd}
+            ", Encoding.UTF8);
             context.AddSource($"{structToAugment.Identifier.Text}.GeneratedWrapper.cs", sourceText);
         }
 
