@@ -158,6 +158,7 @@ namespace TypeWrapperSourceGenerator
             
 
             SourceText sourceText = SourceText.From($@"
+            #nullable disable
             using System;
             {stringConverterImport}
             {newtonSoftJsonImport}
