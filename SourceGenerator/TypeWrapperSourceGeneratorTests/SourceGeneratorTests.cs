@@ -33,6 +33,18 @@ namespace TypeWrapperSourceGeneratorTests
     {
     }
 
+    enum SomeEnum
+    {
+        Red,
+        Green,
+        Blue,
+    }
+    
+    [TypeWrapper(typeof(SomeEnum), WrapperFeature.NewtonSoftJsonConverter)]
+    readonly partial struct WrappedEnum
+    {
+    }
+
     partial class SomeClass
     {
         [TypeWrapper(typeof(int))]
@@ -59,6 +71,7 @@ namespace TypeWrapperSourceGeneratorTests
     {
         public Dictionary<WrappedJsonInt, int> IntDictionary;
         public Dictionary<WrappedJsonString, int> StringDictionary;
+        public Dictionary<WrappedEnum, int> EnumDictionary;
     }
 
     public class SourceGeneratorTests
@@ -173,16 +186,20 @@ namespace TypeWrapperSourceGeneratorTests
             // Given  
             Dictionary<WrappedInt, int> intDictionary = new();
             Dictionary<WrappedString, int> stringDictionary = new();
+            Dictionary<WrappedEnum, int> enumDictionary = new();
             WrappedInt wrapped = new(123);
             WrappedString wrapped2 = new("test");
+            WrappedEnum wrapped3 = new(SomeEnum.Blue);
 
             // When
             intDictionary[wrapped] = 111;
             stringDictionary[wrapped2] = 222;
+            enumDictionary[wrapped3] = 333;
 
             // Then
             Assert.That(intDictionary[wrapped], Is.EqualTo(111));
             Assert.That(stringDictionary[wrapped2], Is.EqualTo(222));
+            Assert.That(enumDictionary[wrapped3], Is.EqualTo(333));
         }
         
         [Test]
@@ -192,11 +209,14 @@ namespace TypeWrapperSourceGeneratorTests
             SerializableStruct serializableStruct = new();
             serializableStruct.IntDictionary = new();
             serializableStruct.StringDictionary = new();
+            serializableStruct.EnumDictionary = new();
             WrappedJsonInt wrapped = new(123);
             WrappedJsonString wrapped2 = new("test");
+            WrappedEnum wrapped3 = new(SomeEnum.Blue);
             
             serializableStruct.IntDictionary[wrapped] = 111;
             serializableStruct.StringDictionary[wrapped2] = 222;
+            serializableStruct.EnumDictionary[wrapped3] = 333;
 
             // When
             string serialized = JsonConvert.SerializeObject(serializableStruct);
@@ -205,6 +225,7 @@ namespace TypeWrapperSourceGeneratorTests
             // Then
             Assert.That(deserialized.IntDictionary[wrapped], Is.EqualTo(111));
             Assert.That(deserialized.StringDictionary[wrapped2], Is.EqualTo(222));
+            Assert.That(deserialized.EnumDictionary[wrapped3], Is.EqualTo(333));
         }
     }
 }
