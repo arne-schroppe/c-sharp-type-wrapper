@@ -196,8 +196,10 @@ namespace TypeWrapperSourceGenerator
             {namespaceStart}
 
             {enclosingClassesDeclarationsStart}
+
             {newtonSoftJsonConverterAttribute}
             {stringConverterAttribute}
+            [Serializable]
             {readonlyClause} partial struct {outerTypeName} : IEquatable<{outerTypeName}>
             {{
                 public readonly {wrappedType} Value;
