@@ -23,12 +23,12 @@ namespace TypeWrapperSourceGeneratorTests
     {
     }
 
-    [TypeWrapper(typeof(int), WrapperFeature.NewtonSoftJsonConverter)]
+    [TypeWrapper(typeof(int), TypeWrapperFeature.NewtonSoftJsonConverter)]
     readonly partial struct WrappedJsonInt
     {
     }
 
-    [TypeWrapper(typeof(string), WrapperFeature.NewtonSoftJsonConverter)]
+    [TypeWrapper(typeof(string), TypeWrapperFeature.NewtonSoftJsonConverter)]
     readonly partial struct WrappedJsonString
     {
     }
@@ -40,7 +40,7 @@ namespace TypeWrapperSourceGeneratorTests
         Blue,
     }
     
-    [TypeWrapper(typeof(SomeEnum), WrapperFeature.NewtonSoftJsonConverter)]
+    [TypeWrapper(typeof(SomeEnum), TypeWrapperFeature.NewtonSoftJsonConverter)]
     readonly partial struct WrappedEnum
     {
     }

@@ -17,12 +17,12 @@ namespace TypeWrapperSourceGenerator
             public readonly string WrappedType;
             public readonly string Namespace;
             public readonly bool IsReadOnly;
-            public readonly WrapperFeature Features;
+            public readonly TypeWrapperFeature Features;
 
             public WrappedStructDescription(
                 StructDeclarationSyntax structToAugment, 
                 string wrappedType, string ns,
-                bool isReadOnly, WrapperFeature features)
+                bool isReadOnly, TypeWrapperFeature features)
             {
                 StructToAugment = structToAugment;
                 WrappedType = wrappedType;
@@ -66,7 +66,7 @@ namespace TypeWrapperSourceGenerator
             StructDeclarationSyntax structToAugment = structDescription.StructToAugment;
             string wrappedType = structDescription.WrappedType;
             string structName = structToAugment.Identifier.Text;
-            bool hasNewtonSoftJson = (structDescription.Features & WrapperFeature.NewtonSoftJsonConverter) != 0;
+            bool hasNewtonSoftJson = (structDescription.Features & TypeWrapperFeature.NewtonSoftJsonConverter) != 0;
             
             
             if (!isReadOnly)
@@ -278,7 +278,7 @@ namespace TypeWrapperSourceGenerator
                         .Select(ns => ns.Name.ToString()));
 
                 string wrappedType = null;
-                WrapperFeature wrapperFeatures = WrapperFeature.None;
+                TypeWrapperFeature typeWrapperFeatures = TypeWrapperFeature.None;
                 foreach (var attributeList in s.AttributeLists)
                 {
                     // TODO check if it has more than one Attribute 
@@ -298,9 +298,9 @@ namespace TypeWrapperSourceGenerator
                             if (attribute.ArgumentList.Arguments.Count > 1)
                             {
                                 var rawFeatures = attribute.ArgumentList.Arguments[1].Expression.GetText(Encoding.UTF8).ToString();
-                                if (rawFeatures.Contains(nameof(WrapperFeature.NewtonSoftJsonConverter)))
+                                if (rawFeatures.Contains(nameof(TypeWrapperFeature.NewtonSoftJsonConverter)))
                                 {
-                                    wrapperFeatures |= WrapperFeature.NewtonSoftJsonConverter;
+                                    typeWrapperFeatures |= TypeWrapperFeature.NewtonSoftJsonConverter;
                                 }
                             }
 
@@ -314,7 +314,7 @@ namespace TypeWrapperSourceGenerator
                 
                 bool isReadOnly = s.Modifiers.Any(m => m.IsKind(SyntaxKind.ReadOnlyKeyword));
 
-                WrappedStructDescriptions.Add(new WrappedStructDescription(s, wrappedType, namespaces, isReadOnly, wrapperFeatures));
+                WrappedStructDescriptions.Add(new WrappedStructDescription(s, wrappedType, namespaces, isReadOnly, typeWrapperFeatures));
             }
         }
     }
