@@ -17,12 +17,12 @@ namespace TypeWrapperSourceGenerator
             public readonly string WrappedType;
             public readonly string Namespace;
             public readonly bool IsReadOnly;
-            public readonly TypeWrapperFeature Features;
+            public readonly Feature Features;
 
             public WrappedStructDescription(
                 StructDeclarationSyntax structToAugment, 
                 string wrappedType, string ns,
-                bool isReadOnly, TypeWrapperFeature features)
+                bool isReadOnly, Feature features)
             {
                 StructToAugment = structToAugment;
                 WrappedType = wrappedType;
@@ -39,6 +39,10 @@ namespace TypeWrapperSourceGenerator
 
         private readonly DiagnosticDescriptor _missingReadOnlyDescriptor =
             new ("SWGenW001", "Missing readonly", "Struct should be readonly", "StructWrapper", DiagnosticSeverity.Warning,
+                true);
+        
+        private readonly DiagnosticDescriptor _shouldNotBeReadOnlyDescriptor =
+            new ("SWGenW002", "Unexpected readonly", "Struct cannot be readonly if it is also Serializable", "StructWrapper", DiagnosticSeverity.Warning,
                 true);
         
         private readonly DiagnosticDescriptor _enclosingClassNotPartial =
@@ -66,12 +70,18 @@ namespace TypeWrapperSourceGenerator
             StructDeclarationSyntax structToAugment = structDescription.StructToAugment;
             string wrappedType = structDescription.WrappedType;
             string structName = structToAugment.Identifier.Text;
-            bool hasNewtonSoftJson = (structDescription.Features & TypeWrapperFeature.NewtonSoftJsonConverter) != 0;
+            bool hasNewtonSoftJson = (structDescription.Features & Feature.NewtonSoftJsonConverter) != 0;
+            bool isSerializable = (structDescription.Features & Feature.Serializable) != 0;
             
-            
-            if (!isReadOnly)
+            if (!isReadOnly && !isSerializable)
             {
                 context.ReportDiagnostic(Diagnostic.Create(_missingReadOnlyDescriptor,
+                    structDescription.StructToAugment.GetLocation()));
+            }
+            
+            if (isReadOnly && isSerializable)
+            {
+                context.ReportDiagnostic(Diagnostic.Create(_shouldNotBeReadOnlyDescriptor,
                     structDescription.StructToAugment.GetLocation()));
             }
 
@@ -136,6 +146,16 @@ namespace TypeWrapperSourceGenerator
                 }}";
             }
             
+            string serializableAttribute = "";
+            string serializeFieldAttribute = "";
+            string unityEngineImport = "";
+            if (isSerializable)
+            {
+                serializableAttribute = "[Serializable]";
+                serializeFieldAttribute = "[SerializeField]";
+                unityEngineImport = "using UnityEngine;";
+            }
+            
             string stringConverterImport = "";
             string stringConverterAttribute = "";
             string stringConverterClass = "";
@@ -191,6 +211,7 @@ namespace TypeWrapperSourceGenerator
             SourceText sourceText = SourceText.From($@"
             #nullable disable
             using System;
+            {unityEngineImport}
             {stringConverterImport}
             {newtonSoftJsonImport}
             {namespaceStart}
@@ -199,10 +220,11 @@ namespace TypeWrapperSourceGenerator
 
             {newtonSoftJsonConverterAttribute}
             {stringConverterAttribute}
-            [Serializable]
+            {serializableAttribute}
             {readonlyClause} partial struct {outerTypeName} : IEquatable<{outerTypeName}>
             {{
-                public readonly {wrappedType} Value;
+                {serializeFieldAttribute}
+                public {readonlyClause} {wrappedType} Value;
                 public {structName}({wrappedType} rawValue)
                 {{
                     this.Value = rawValue;
@@ -278,7 +300,7 @@ namespace TypeWrapperSourceGenerator
                         .Select(ns => ns.Name.ToString()));
 
                 string wrappedType = null;
-                TypeWrapperFeature typeWrapperFeatures = TypeWrapperFeature.None;
+                Feature features = Feature.None;
                 foreach (var attributeList in s.AttributeLists)
                 {
                     // TODO check if it has more than one Attribute 
@@ -298,9 +320,13 @@ namespace TypeWrapperSourceGenerator
                             if (attribute.ArgumentList.Arguments.Count > 1)
                             {
                                 var rawFeatures = attribute.ArgumentList.Arguments[1].Expression.GetText(Encoding.UTF8).ToString();
-                                if (rawFeatures.Contains(nameof(TypeWrapperFeature.NewtonSoftJsonConverter)))
+                                if (rawFeatures.Contains(nameof(Feature.NewtonSoftJsonConverter)))
                                 {
-                                    typeWrapperFeatures |= TypeWrapperFeature.NewtonSoftJsonConverter;
+                                    features |= Feature.NewtonSoftJsonConverter;
+                                }
+                                if (rawFeatures.Contains(nameof(Feature.Serializable)))
+                                {
+                                    features |= Feature.Serializable;
                                 }
                             }
 
@@ -314,7 +340,7 @@ namespace TypeWrapperSourceGenerator
                 
                 bool isReadOnly = s.Modifiers.Any(m => m.IsKind(SyntaxKind.ReadOnlyKeyword));
 
-                WrappedStructDescriptions.Add(new WrappedStructDescription(s, wrappedType, namespaces, isReadOnly, typeWrapperFeatures));
+                WrappedStructDescriptions.Add(new WrappedStructDescription(s, wrappedType, namespaces, isReadOnly, features));
             }
         }
     }

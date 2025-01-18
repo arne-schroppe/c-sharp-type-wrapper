@@ -6,9 +6,9 @@ namespace TypeWrapperSourceGenerator
     public class TypeWrapperAttribute : Attribute
     {
         public readonly Type WrappedType;
-        public readonly TypeWrapperFeature Features;
+        public readonly Feature Features;
 
-        public TypeWrapperAttribute(Type wrappedType, TypeWrapperFeature features = TypeWrapperFeature.None)
+        public TypeWrapperAttribute(Type wrappedType, Feature features = Feature.None)
         {
             Debug.Assert(wrappedType != null);
             Features = features;

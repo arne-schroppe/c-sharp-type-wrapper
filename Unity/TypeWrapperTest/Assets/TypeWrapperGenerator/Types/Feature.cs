@@ -3,10 +3,10 @@ using System;
 namespace TypeWrapperSourceGenerator
 {
     [Flags]
-    public enum TypeWrapperFeature
+    public enum Feature
     {
         None = 0,
         NewtonSoftJsonConverter = 1,
-        UnityJsonUtility = 2
+        Serializable = 2
     }
 }
