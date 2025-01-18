@@ -7,5 +7,6 @@ namespace TypeWrapperSourceGenerator
     {
         None = 0,
         NewtonSoftJsonConverter = 1,
+        UnityJsonUtility = 2
     }
 }

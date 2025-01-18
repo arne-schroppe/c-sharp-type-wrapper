@@ -1,0 +1,4 @@
+{
+	"name": "WrappedTypes",
+	"references":[ "TypeWrapperGen" ]
+}
