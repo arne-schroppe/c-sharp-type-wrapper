@@ -133,7 +133,7 @@ namespace TypeWrapperSourceGenerator
                 {{
                     public override void WriteJson(JsonWriter writer, {structName} value, JsonSerializer serializer)
                     {{
-                        serializer.Serialize(writer, value.Value);
+                        serializer.Serialize(writer, value._value);
                     }}
         
                     public override {structName} ReadJson(JsonReader reader, Type objectType, {structName} existingValue,
@@ -174,7 +174,7 @@ namespace TypeWrapperSourceGenerator
                         return JsonConvert.DeserializeObject<{outerTypeName}>($""\""{{(string)value}}\"""");
                     ";
                     convertToImplementation = $@"
-                        return (({outerTypeName})value).Value;
+                        return (({outerTypeName})value)._value;
                     ";
                 }
                 else
@@ -224,15 +224,17 @@ namespace TypeWrapperSourceGenerator
             {readonlyClause} partial struct {outerTypeName} : IEquatable<{outerTypeName}>
             {{
                 {serializeFieldAttribute}
-                public {readonlyClause} {wrappedType} Value;
+                private {readonlyClause} {wrappedType} _value;
+                public {wrappedType} Value => _value;
+
                 public {structName}({wrappedType} rawValue)
                 {{
-                    this.Value = rawValue;
+                    _value = rawValue;
                 }}
 
                 public bool Equals({outerTypeName} other)
                 {{
-                    return Value.Equals(other.Value);
+                    return _value.Equals(other.Value);
                 }}
 
                 public override bool Equals(object obj)
@@ -242,7 +244,7 @@ namespace TypeWrapperSourceGenerator
 
                 public override int GetHashCode()
                 {{
-                    return Value.GetHashCode();
+                    return _value.GetHashCode();
                 }}
 
                 public static bool operator ==({outerTypeName} left, {outerTypeName} right)
@@ -257,7 +259,7 @@ namespace TypeWrapperSourceGenerator
 
                 public override string ToString() 
                 {{
-                    return $""[{structName}({{Value.ToString()}})]"";
+                    return $""[{structName}({{_value.ToString()}})]"";
                 }}
 
                 {newtonSoftJsonConverterClass}
