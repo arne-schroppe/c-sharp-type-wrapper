@@ -22,6 +22,24 @@ readonly partial struct UserId
 }
 ```
 
+(There is also `Feature.UnitySerializable`.)
+
+If you want to verify or manipulate the value, there's the `OnCreate` hook:
+
+```
+
+[TypeWrapper(typeof(long))]
+readonly partial struct Timestamp
+{
+    partial void OnCreate(ref long newValue)
+    {
+        Debug.Assert(newValue > 12433392000, "Historical dates not supported")
+        newValue = WarpHelper.CorrectForTimeDilation(newValue);
+    }
+}
+
+```
+
 
 It's also possible to make the struct wrapper generic. This can be useful if you
 want to use phantom types:
@@ -37,3 +55,6 @@ readonly partial struct Path<T>
 
 Path<IRelative> build = new("Build/");
 ```
+
+
+
