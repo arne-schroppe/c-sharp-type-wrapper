@@ -39,22 +39,22 @@ namespace TypeWrapperSourceGeneratorTests
         Green,
         Blue,
     }
-    
+
     [TypeWrapper(typeof(SomeEnum), Feature.NewtonSoftJsonConverter)]
     readonly partial struct WrappedEnum
     {
     }
-    
+
     [TypeWrapper(typeof(int))]
     readonly partial struct GenericWrappedInt<T> where T : struct
     {
     }
-    
+
     [TypeWrapper(typeof(string))]
     readonly partial struct GenericWrappedString<T> where T : struct
     {
     }
-    
+
 
     partial class SomeClass
     {
@@ -62,7 +62,7 @@ namespace TypeWrapperSourceGeneratorTests
         public readonly partial struct ClassWrappedInt
         {
         }
-        
+
         [TypeWrapper(typeof(string))]
         public readonly partial struct ClassWrappedString
         {
@@ -85,7 +85,7 @@ namespace TypeWrapperSourceGeneratorTests
         public Dictionary<WrappedEnum, int> EnumDictionary;
     }
 
-    public class SourceGeneratorTests
+    public partial class SourceGeneratorTests
     {
         [SetUp]
         public void Setup()
@@ -155,7 +155,7 @@ namespace TypeWrapperSourceGeneratorTests
             // Then
             Assert.That(wrapped.GetHashCode(), Is.EqualTo(456));
         }
-        
+
         [Test]
         public void It_generates_a_type_wrapper_inside_a_class()
         {
@@ -190,7 +190,7 @@ namespace TypeWrapperSourceGeneratorTests
             Assert.That(deserializedString, Is.EqualTo(wrapped2));
             Assert.That(jsonString, Is.EqualTo("\"test\""));
         }
-        
+
         [Test]
         public void Wrapped_values_can_be_used_as_dictionary_keys()
         {
@@ -212,7 +212,7 @@ namespace TypeWrapperSourceGeneratorTests
             Assert.That(stringDictionary[wrapped2], Is.EqualTo(222));
             Assert.That(enumDictionary[wrapped3], Is.EqualTo(333));
         }
-        
+
         [Test]
         public void Wrapped_values_can_be_used_as_dictionary_keys_when_serializing_to_json()
         {
@@ -224,7 +224,7 @@ namespace TypeWrapperSourceGeneratorTests
             WrappedJsonInt wrapped = new(123);
             WrappedJsonString wrapped2 = new("test");
             WrappedEnum wrapped3 = new(SomeEnum.Blue);
-            
+
             serializableStruct.IntDictionary[wrapped] = 111;
             serializableStruct.StringDictionary[wrapped2] = 222;
             serializableStruct.EnumDictionary[wrapped3] = 333;
@@ -238,7 +238,7 @@ namespace TypeWrapperSourceGeneratorTests
             Assert.That(deserialized.StringDictionary[wrapped2], Is.EqualTo(222));
             Assert.That(deserialized.EnumDictionary[wrapped3], Is.EqualTo(333));
         }
-        
+
         [Test]
         public void It_generates_a_type_wrapped_value_where_the_wrapper_is_generic()
         {
@@ -249,6 +249,56 @@ namespace TypeWrapperSourceGeneratorTests
             // Then
             Assert.That(wrappedInt.Value, Is.EqualTo(123));
             Assert.That(wrappedString.Value, Is.EqualTo("hello"));
+        }
+
+
+        [TypeWrapper(typeof(int))]
+        readonly partial struct WrappedIntWithHook
+        {
+            partial void OnCreate(ref int newValue)
+            {
+                if (newValue == 123)
+                {
+                    throw new Exception("Assertion failed");
+                }
+
+                newValue += 10;
+            }
+        }
+
+        [TypeWrapper(typeof(string))]
+        readonly partial struct WrappedStringWithHook
+        {
+            partial void OnCreate(ref string newValue)
+            {
+                if (newValue == "fail")
+                {
+                    throw new Exception("Assertion failed");
+                }
+
+                newValue += "!!";
+            }
+        }
+
+        [Test]
+        public void It_allows_asserting_input_values_by_using_a_hook()
+        {
+            Assert.Throws<Exception>(() => { _ = new WrappedIntWithHook(123); });
+            Assert.DoesNotThrow(() => { _ = new WrappedIntWithHook(124); });
+            Assert.Throws<Exception>(() => { _ = new WrappedStringWithHook("fail"); });
+            Assert.DoesNotThrow(() => { _ = new WrappedStringWithHook("no fail"); });
+        }
+        
+        [Test]
+        public void It_manipulates_the_underlying_value_by_using_a_hook()
+        {
+            // When
+            WrappedIntWithHook wrappedInt = new(100);
+            WrappedStringWithHook wrappedString = new("yes");
+
+            // Then
+            Assert.That(wrappedInt.Value, Is.EqualTo(110));
+            Assert.That(wrappedString.Value, Is.EqualTo("yes!!"));
         }
     }
 }

@@ -227,8 +227,11 @@ namespace TypeWrapperSourceGenerator
                 private {readonlyClause} {wrappedType} _value;
                 public {wrappedType} Value => _value;
 
+                partial void OnCreate(ref {wrappedType} newValue);
+
                 public {structName}({wrappedType} rawValue)
                 {{
+                    OnCreate(ref rawValue);
                     _value = rawValue;
                 }}
 
