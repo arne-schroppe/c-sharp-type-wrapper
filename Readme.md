@@ -2,9 +2,10 @@
 # C# Type Wrapper Generator
 
 How to install: Use the TypeWrapperSourceGenerator project to create the source generator dll. 
-Add it together with Types/Feature.cs and Types/TypeWrapperAttribute.cs to your project.
+Add it together with "Types/Feature.cs" and "Types/TypeWrapperAttribute.cs" to your Unity project. 
+See here for more information on [Roslyn Source Generators in Unity](https://docs.unity3d.com/2023.2/Documentation/Manual/roslyn-analyzers.html)
 
-Then you can use the following syntax to get a type-safe wrapper generated for your primitive types:
+You can use the following syntax to get a type safe wrapper generated for your primitive types:
 
 ```
 [TypeWrapper(typeof(string))]
@@ -13,7 +14,7 @@ readonly partial struct UserId
 }
 ```
 
-You can also automatically generator a JsonConverter in case you use NewtonSoft Json:
+You can optionally get a `JsonConverter` generated, if you use NewtonSoft Json:
 
 ```
 [TypeWrapper(typeof(string), Feature.NewtonSoftJsonConverter)]
