@@ -8,7 +8,7 @@ Then you can use the following syntax to get a type-safe wrapper generated for y
 
 ```
 [TypeWrapper(typeof(string))]
-public readonly partial struct UserId
+readonly partial struct UserId
 {
 }
 ```
@@ -17,7 +17,23 @@ You can also automatically generator a JsonConverter in case you use NewtonSoft 
 
 ```
 [TypeWrapper(typeof(string), Feature.NewtonSoftJsonConverter)]
-public readonly partial struct UserId
+readonly partial struct UserId
 {
 }
+```
+
+
+It's also possible to make the struct wrapper generic. This can be useful if you
+want to use phantom types:
+
+```
+interface IRelative {};
+interface IAbsolute {};
+
+[TypeWrapper(typeof(string)]
+readonly partial struct Path<T>
+{
+}
+
+Path<IRelative> build = new("Build/");
 ```
