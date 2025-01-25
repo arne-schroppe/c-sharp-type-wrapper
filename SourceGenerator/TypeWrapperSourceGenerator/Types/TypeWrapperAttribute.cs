@@ -3,6 +3,7 @@ using System.Diagnostics;
 
 namespace TypeWrapperSourceGenerator
 {
+    [AttributeUsage(AttributeTargets.Struct)]
     public class TypeWrapperAttribute : Attribute
     {
         public readonly Type WrappedType;
