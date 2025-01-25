@@ -14,6 +14,11 @@ readonly partial struct UserId
 }
 ```
 
+And then use it with
+```
+var userId = new UserId("JLP-47AT");
+```
+
 You can optionally get a `JsonConverter` generated, if you use NewtonSoft Json:
 
 ```
