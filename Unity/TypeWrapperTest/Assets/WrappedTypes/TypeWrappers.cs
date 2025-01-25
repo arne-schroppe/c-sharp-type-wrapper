@@ -7,12 +7,12 @@ namespace Types
     {
     }
 
-    [TypeWrapper(typeof(int), Feature.Serializable)]
+    [TypeWrapper(typeof(int), Feature.UnitySerializable)]
     public partial struct SerializableWrappedInt
     {
     }
 
-    [TypeWrapper(typeof(string), Feature.Serializable)]
+    [TypeWrapper(typeof(string), Feature.UnitySerializable)]
     public partial struct SerializableWrappedString
     {
     }

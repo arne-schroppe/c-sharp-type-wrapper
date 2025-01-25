@@ -7,6 +7,6 @@ namespace TypeWrapperSourceGenerator
     {
         None = 0,
         NewtonSoftJsonConverter = 1,
-        Serializable = 2
+        UnitySerializable = 2
     }
 }

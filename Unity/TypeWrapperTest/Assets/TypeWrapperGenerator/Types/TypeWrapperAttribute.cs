@@ -13,6 +13,5 @@ namespace TypeWrapperSourceGenerator
             Debug.Assert(wrappedType != null);
             Features = features;
         }
-        
     }
 }

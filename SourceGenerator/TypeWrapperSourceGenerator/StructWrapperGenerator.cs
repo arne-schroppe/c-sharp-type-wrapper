@@ -71,7 +71,7 @@ namespace TypeWrapperSourceGenerator
             string wrappedType = structDescription.WrappedType;
             string structName = structToAugment.Identifier.Text;
             bool hasNewtonSoftJson = (structDescription.Features & Feature.NewtonSoftJsonConverter) != 0;
-            bool isSerializable = (structDescription.Features & Feature.Serializable) != 0;
+            bool isSerializable = (structDescription.Features & Feature.UnitySerializable) != 0;
             
             if (!isReadOnly && !isSerializable)
             {
@@ -329,9 +329,9 @@ namespace TypeWrapperSourceGenerator
                                 {
                                     features |= Feature.NewtonSoftJsonConverter;
                                 }
-                                if (rawFeatures.Contains(nameof(Feature.Serializable)))
+                                if (rawFeatures.Contains(nameof(Feature.UnitySerializable)))
                                 {
-                                    features |= Feature.Serializable;
+                                    features |= Feature.UnitySerializable;
                                 }
                             }
 
