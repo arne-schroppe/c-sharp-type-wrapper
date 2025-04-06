@@ -1,7 +1,7 @@
 using System;
 using System.Diagnostics;
 
-namespace TypeWrapperSourceGenerator
+namespace TypeWrapper
 {
     [AttributeUsage(AttributeTargets.Struct)]
     public class TypeWrapperAttribute : Attribute

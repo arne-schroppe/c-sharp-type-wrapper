@@ -1,7 +1,7 @@
 using System;
 using System.Diagnostics;
 
-namespace TypeWrapperSourceGenerator
+namespace TypeWrapper
 {
     public class TypeWrapperAttribute : Attribute
     {
