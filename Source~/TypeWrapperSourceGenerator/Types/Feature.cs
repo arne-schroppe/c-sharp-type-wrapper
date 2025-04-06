@@ -1,6 +1,6 @@
 using System;
 
-namespace TypeWrapper
+namespace TypeWrapperGenerator
 {
     [Flags]
     public enum Feature

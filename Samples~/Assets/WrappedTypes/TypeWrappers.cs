@@ -1,4 +1,4 @@
-using TypeWrapper;
+using TypeWrapperGenerator;
 
 namespace Types
 {

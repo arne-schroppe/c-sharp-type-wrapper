@@ -1,4 +1,4 @@
-namespace TypeWrapperSourceGeneratorTests;
+namespace TypeWrapperGeneratorTests;
 
 class RefType : IEquatable<RefType>
 {

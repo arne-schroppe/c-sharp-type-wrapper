@@ -1,7 +1,7 @@
 ﻿using Newtonsoft.Json;
-using TypeWrapper;
+using TypeWrapperGenerator;
 
-namespace TypeWrapperSourceGeneratorTests
+namespace TypeWrapperGeneratorTests
 {
     [TypeWrapper(typeof(int))]
     readonly partial struct WrappedInt
