@@ -1,10 +1,6 @@
 
 # C# Type Wrapper Generator
 
-How to install: Use the TypeWrapperSourceGenerator project to create the source generator dll. 
-Add it together with "Types/Feature.cs" and "Types/TypeWrapperAttribute.cs" to your Unity project. 
-See here for more information on [Roslyn Source Generators in Unity](https://docs.unity3d.com/2023.2/Documentation/Manual/roslyn-analyzers.html)
-
 You can use the following syntax to get a type safe wrapper generated for your primitive types:
 
 ```c#
