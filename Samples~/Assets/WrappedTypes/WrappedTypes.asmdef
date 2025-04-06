@@ -1,4 +1,16 @@
 {
-	"name": "WrappedTypes",
-	"references":[ "TypeWrapperGen" ]
+    "name": "WrappedTypes",
+    "rootNamespace": "",
+    "references": [
+        "TypeWrapperGen"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
 }
