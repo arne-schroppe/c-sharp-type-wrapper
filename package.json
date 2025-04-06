@@ -2,7 +2,7 @@
   "name": "net.arneschroppe.typewrappergenerator",
   "version": "0.1.0",
   "displayName": "Type Wrapper Generator",
-  "description": "A Roslyn type generator for generating structs that wrap primitive types like strings",
+  "description": "A Roslyn type generator for generating structs that wrap primitive types, like strings",
   "unity": "2022.3",
   "unityRelease": "20f1",
   "dependencies": {
